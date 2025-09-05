@@ -59,12 +59,30 @@ trait BuildsExpressionQueries
      */
     public function __construct(Connection $connection, ?Grammar $grammar = null, ?Processor $processor = null)
     {
-        $grammar = $grammar ?: $this->getQueryGrammar($connection);
+        // Use the custom grammar only if it is not an instance of one of the standard grammars
+        if (is_null($grammar) || $this->isStandardGrammar($grammar, $connection)) {
+            $grammar = $this->getQueryGrammar($connection);
+        }
+
         $processor = $processor ?: $connection->getPostProcessor();
 
         parent::__construct($connection, $grammar, $processor);
 
         $this->bindings = ['expressions' => []] + $this->bindings;
+    }
+
+    /**
+     * Determine whether the given grammar is one of the standard grammars.
+     *
+     * @param  \Illuminate\Database\Query\Grammars\Grammar  $grammar
+     * @param  \Illuminate\Database\Connection  $connection
+     * @return bool
+     */
+    protected function isStandardGrammar(Grammar $grammar, Connection $connection): bool
+    {
+        $standardGrammar = $this->getQueryGrammar($connection);
+
+        return get_class($grammar) == get_class($standardGrammar);
     }
 
     /**
